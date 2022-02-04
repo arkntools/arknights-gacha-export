@@ -15,9 +15,9 @@ const userPath = app.getPath('userData')
 
 let win = null
 const initWindow = () => {
-  let mainWindowState = windowStateKeeper({
+  const mainWindowState = windowStateKeeper({
     defaultWidth: 888,
-    defaultHeight: 550
+    defaultHeight: 565
   })
   win = new BrowserWindow({
     x: mainWindowState.x,
@@ -25,7 +25,7 @@ const initWindow = () => {
     width: mainWindowState.width,
     height: mainWindowState.height,
     webPreferences: {
-      contextIsolation:false,
+      contextIsolation: false,
       nodeIntegration: true
     }
   })
@@ -38,23 +38,25 @@ const initWindow = () => {
 const getWin = () => win
 
 const log = []
-const sendMsg = (text, type = 'LOAD_DATA_STATUS') => {
+const sendMsg = (text, type = 'LOAD_DATA_STATUS', needLog = true) => {
   if (win) {
     win.webContents.send(type, text)
   }
-  if (type !== 'LOAD_DATA_STATUS') {
+  if (needLog && type !== 'LOAD_DATA_STATUS') {
     log.push([Date.now(), type, text])
     saveLog()
   }
 }
 
 const saveLog = () => {
-  const text = log.map(item => {
-    const time = new Date(item[0]).toLocaleString()
-    const type = item[1] === 'LOAD_DATA_STATUS' ? 'INFO' : item[1]
-    const text = item[2]
-    return `[${type}][${time}]${text}`
-  }).join('\r\n')
+  const text = log
+    .map((item) => {
+      const time = new Date(item[0]).toLocaleString()
+      const type = item[1] === 'LOAD_DATA_STATUS' ? 'INFO' : item[1]
+      const text = item[2]
+      return `[${type}][${time}]${text}`
+    })
+    .join('\r\n')
   fs.outputFileSync(path.join(userDataPath, 'log.txt'), text)
 }
 
@@ -70,47 +72,38 @@ unhandled({
   }
 })
 
-const request = async (url) => {
+/**
+ * @param {string} url
+ * @param {import('electron-fetch').RequestInit} options
+ */
+const request = async (url, options = {}) => {
   const res = await fetch(url, {
-    timeout: 15 * 1000
+    timeout: 15 * 1000,
+    ...options
   })
   return await res.json()
 }
 
 const sleep = (sec = 1) => {
-  return new Promise(rev => {
-    setTimeout(rev, sec * 1000)
-  })
-}
-
-const sortData = (data) => {
-  return data.map(item => {
-    const [time, name, type, rank] = item
-    return {
-      time, name, type, rank,
-      timestamp: new Date(time)
-    }
-  }).sort((a, b) => a.timestamp - b.timestamp)
-  .map(item => {
-    const { time, name, type, rank } = item
-    return [time, name, type, rank]
+  return new Promise((resolve) => {
+    setTimeout(resolve, sec * 1000)
   })
 }
 
 const langMap = new Map([
-  ['zh-cn', '简体中文'],
-  ['zh-tw', '繁體中文'],
-  ['de-de', 'Deutsch'],
-  ['en-us', 'English'],
-  ['es-es', 'Español'],
-  ['fr-fr', 'Français'],
-  ['id-id', 'Indonesia'],
-  ['ja-jp', '日本語'],
-  ['ko-kr', '한국어'],
-  ['pt-pt', 'Português'],
-  ['ru-ru', 'Pусский'],
-  ['th-th', 'ภาษาไทย'],
-  ['vi-vn', 'Tiếng Việt']
+  ['zh-cn', '简体中文']
+  // ['zh-tw', '繁體中文'],
+  // ['de-de', 'Deutsch'],
+  // ['en-us', 'English'],
+  // ['es-es', 'Español'],
+  // ['fr-fr', 'Français'],
+  // ['id-id', 'Indonesia'],
+  // ['ja-jp', '日本語'],
+  // ['ko-kr', '한국어'],
+  // ['pt-pt', 'Português'],
+  // ['ru-ru', 'Pусский'],
+  // ['th-th', 'ภาษาไทย'],
+  // ['vi-vn', 'Tiếng Việt']
 ])
 
 const localeMap = new Map([
@@ -132,7 +125,7 @@ const localeMap = new Map([
 const detectLocale = () => {
   const locale = app.getLocale()
   let result = 'zh-cn'
-  for (let [key, list] of localeMap) {
+  for (const [key, list] of localeMap) {
     if (list.includes(locale)) {
       result = key
       break
@@ -185,22 +178,35 @@ const decipherAes = (encrypted) => {
   return decrypted
 }
 
-const  interfaces = require('os').networkInterfaces()
+const interfaces = require('os').networkInterfaces()
 const localIp = () => {
-  for (var devName in interfaces) {
-    var iface = interfaces[devName]
+  for (const devName in interfaces) {
+    const iface = interfaces[devName]
 
-    for (var i = 0; i < iface.length; i++) {
-      var alias = iface[i]
-      if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal)
-        return alias.address
+    for (let i = 0; i < iface.length; i++) {
+      const alias = iface[i]
+      if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) return alias.address
     }
   }
   return '127.0.0.1'
 }
 
 module.exports = {
-  sleep, request, hash, cipherAes, decipherAes, saveLog,
-  sendMsg, readJSON, saveJSON, initWindow, getWin, localIp, userPath, detectLocale, langMap,
-  appRoot, userDataPath
+  sleep,
+  request,
+  hash,
+  cipherAes,
+  decipherAes,
+  saveLog,
+  sendMsg,
+  readJSON,
+  saveJSON,
+  initWindow,
+  getWin,
+  localIp,
+  userPath,
+  detectLocale,
+  langMap,
+  appRoot,
+  userDataPath
 }

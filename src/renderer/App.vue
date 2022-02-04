@@ -2,68 +2,110 @@
   <div v-if="ui" class="relative">
     <div class="flex justify-between">
       <div>
-        <el-button type="primary" :icon="state.status === 'init' ? 'milk-tea': 'refresh-right'" class="focus:outline-none" :disabled="!allowClick()" plain   @click="fetchData()" :loading="state.status === 'loading'">{{state.status === 'init' ? ui.button.load: ui.button.update}}</el-button>
-        <el-button icon="folder-opened" @click="saveExcel" class="focus:outline-none" :disabled="!gachaData"  type="success" plain>{{ui.button.excel}}</el-button>
+        <el-button
+          type="primary"
+          :icon="state.status === 'init' ? 'milk-tea' : 'refresh-right'"
+          class="focus:outline-none"
+          :disabled="!allowClick()"
+          plain
+          @click="fetchData()"
+          :loading="state.status === 'loading'"
+          >{{ state.status === 'init' ? ui.button.load : ui.button.update }}</el-button
+        >
+        <el-button
+          icon="folder-opened"
+          @click="saveExcel"
+          class="focus:outline-none"
+          :disabled="!gachaData"
+          type="success"
+          plain
+          >{{ ui.button.excel }}</el-button
+        >
         <el-tooltip v-if="detail && state.status !== 'loading'" :content="ui.hint.newAccount" placement="bottom">
-          <el-button @click="newUser()" plain icon="plus"  class="focus:outline-none"></el-button>
+          <el-button @click="newUser()" plain icon="plus" class="focus:outline-none"></el-button>
         </el-tooltip>
         <el-tooltip v-if="state.status === 'updated'" :content="ui.hint.relaunchHint" placement="bottom">
-          <el-button @click="relaunch()" type="success" icon="refresh"   class="focus:outline-none" style="margin-left: 48px">{{ui.button.directUpdate}}</el-button>
+          <el-button
+            @click="relaunch()"
+            type="success"
+            icon="refresh"
+            class="focus:outline-none"
+            style="margin-left: 48px"
+            >{{ ui.button.directUpdate }}</el-button
+          >
         </el-tooltip>
       </div>
       <div class="flex gap-2">
-        <el-select v-if="state.status !== 'loading' && state.dataMap && (state.dataMap.size > 1 || (state.dataMap.size === 1 && state.current === 0))" class="w-44"   @change="changeCurrent" v-model="uidSelectText">
-          <el-option
-            v-for="item of state.dataMap"
-            :key="item[0]"
-            :label="maskUid(item[0])"
-            :value="item[0]">
-          </el-option>
+        <el-select
+          v-if="
+            state.status !== 'loading' &&
+            state.dataMap &&
+            (state.dataMap.size > 1 || (state.dataMap.size === 1 && state.current === 0))
+          "
+          class="w-44"
+          @change="changeCurrent"
+          v-model="uidSelectText"
+        >
+          <el-option v-for="[uid, { nickName }] of state.dataMap" :key="uid" :label="nickName" :value="uid"></el-option>
         </el-select>
-        <el-dropdown @command="optionCommand"  >
-          <el-button @click="showSetting(true)" class="focus:outline-none" plain type="info" icon="more"  >{{ui.button.option}}</el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="setting" icon="setting">{{ui.button.setting}}</el-dropdown-item>
-              <el-dropdown-item :disabled="!allowClick() || state.status === 'loading'" command="url" icon="link">{{ui.button.url}}</el-dropdown-item>
-              <el-dropdown-item :disabled="!allowClick() || state.status === 'loading'" command="proxy" icon="position">{{ui.button.startProxy}}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <el-button @click="showSetting(true)" class="focus:outline-none" plain type="info" icon="setting">{{
+          ui.button.option
+        }}</el-button>
       </div>
     </div>
-    <p class="text-gray-400 my-2 text-xs">{{hint}}</p>
+    <p class="text-gray-400 my-2 text-xs">{{ hint }}</p>
     <div v-if="detail" class="gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
-      <div class="mb-4" v-for="(item, i) of detail" :key="i">
-        <div :class="{hidden: state.config.hideNovice && item[0] === '100'}">
-          <p class="text-center text-gray-600 my-2">{{typeMap.get(item[0])}}</p>
-          <pie-chart :data="item" :i18n="state.i18n" :typeMap="typeMap"></pie-chart>
-          <gacha-detail :i18n="state.i18n" :data="item" :typeMap="typeMap"></gacha-detail>
+      <div class="mb-4" v-for="[pool, item] of detail" :key="pool">
+        <div>
+          <p class="text-center text-gray-600 my-2">{{ pool }}</p>
+          <pie-chart :data="item" :i18n="state.i18n"></pie-chart>
+          <gacha-detail :data="item" :i18n="state.i18n"></gacha-detail>
         </div>
       </div>
     </div>
-    <Setting v-show="state.showSetting" :i18n="state.i18n" @changeLang="getI18nData()" @close="showSetting(false)"></Setting>
+    <Setting
+      v-show="state.showSetting"
+      :i18n="state.i18n"
+      @changeLang="getI18nData()"
+      @close="showSetting(false)"
+    ></Setting>
 
-    <el-dialog :title="ui.urlDialog.title" v-model="state.showUrlDlg" width="90%" custom-class="max-w-md">
-      <p class="mb-4 text-gray-500">{{ui.urlDialog.hint}}</p>
-      <el-input  type="textarea" :autosize="{minRows: 4}" :placeholder="ui.urlDialog.placeholder" v-model="state.urlInput" spellcheck="false"></el-input>
+    <el-dialog
+      :title="ui.tokenDialog.title"
+      v-model="state.showUrlDlg"
+      width="90%"
+      custom-class="token-dialog max-w-md"
+    >
+      <p class="mb-4 text-gray-500">
+        {{ ui.tokenDialog.hint1 }}
+        <Link href="https://ak.hypergryph.com" />
+        {{ ui.tokenDialog.hint2 }}
+        <Link href="https://as.hypergryph.com/user/info/v1/token_by_cookie" />
+        {{ ui.tokenDialog.hint3 }}
+      </p>
+      <el-input :placeholder="ui.tokenDialog.placeholder" v-model="state.urlInput" spellcheck="false"></el-input>
       <template #footer>
         <span class="dialog-footer">
-          <el-button  @click="state.showUrlDlg = false" class="focus:outline-none">{{ui.common.cancel}}</el-button>
-          <el-button  type="primary" @click="state.showUrlDlg = false, fetchData(state.urlInput)" class="focus:outline-none">{{ui.common.ok}}</el-button>
+          <el-button @click="state.showUrlDlg = false" class="focus:outline-none">{{ ui.common.cancel }}</el-button>
+          <el-button
+            type="primary"
+            @click=";(state.showUrlDlg = false), fetchData(state.urlInput)"
+            class="focus:outline-none"
+            >{{ ui.common.ok }}</el-button
+          >
         </span>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
 <script setup>
 const { ipcRenderer } = require('electron')
-import { reactive, computed, watch, onMounted } from 'vue'
+import { reactive, computed, onMounted, toRaw } from 'vue'
 import PieChart from './components/PieChart.vue'
 import GachaDetail from './components/GachaDetail.vue'
 import Setting from './components/Setting.vue'
+import Link from './components/Link.vue'
 import gachaDetail from './gachaDetail'
 import { version } from '../../package.json'
 
@@ -131,7 +173,7 @@ const hint = computed(() => {
 const detail = computed(() => {
   const data = state.dataMap.get(state.current)
   if (data) {
-    return gachaDetail(data.result)
+    return gachaDetail(toRaw(data.result))
   }
 })
 
@@ -140,9 +182,9 @@ const typeMap = computed(() => {
   return data.typeMap
 })
 
-const fetchData = async (url) => {
+const fetchData = async (token) => {
   state.status = 'loading'
-  const data = await ipcRenderer.invoke('FETCH_DATA', url)
+  const data = await ipcRenderer.invoke('FETCH_DATA', token)
   if (data) {
     state.dataMap = data.dataMap
     state.current = data.current
@@ -193,10 +235,6 @@ const relaunch = async () => {
   await ipcRenderer.invoke('RELAUNCH')
 }
 
-const maskUid = (uid) => {
-  return `${uid}`.replace(/(.{3})(.+)(.{3})$/, '$1***$3')
-}
-
 const showSetting = (show) => {
   if (show) {
     state.showSetting = true
@@ -242,6 +280,25 @@ onMounted(async () => {
     state.status = 'updated'
   })
 
+  ipcRenderer.on('TOKEN_NOT_SET', () => {
+    state.showUrlDlg = true
+  })
+
   await updateConfig()
 })
 </script>
+
+<style>
+*:not(input):not(textarea):not([content-editable='true']) {
+  user-select: none;
+}
+.el-select .el-input__inner:read-only {
+  pointer-events: none;
+}
+.el-select .el-input {
+  cursor: pointer;
+}
+.token-dialog .el-dialog__body {
+  padding-top: 16px;
+}
+</style>

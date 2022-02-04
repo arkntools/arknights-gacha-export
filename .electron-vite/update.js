@@ -25,7 +25,7 @@ const start = async () => {
   const zipPath = path.resolve(outputPath, name)
   await fs.ensureDir(outputPath)
   await fs.emptyDir(outputPath)
-  await fs.outputFile('./build/update/CNAME', 'genshin-gacha-export.danmu9.com')
+  await fs.outputFile('./build/update/CNAME', 'arknights-gacha-export.lolicon.app')
   createZip(appPath, zipPath)
   const buffer = await fs.readFile(zipPath)
   const sha256 = hash(buffer)
@@ -45,7 +45,7 @@ const start = async () => {
 const copyAppZip = () => {
   try {
     const dir = path.resolve('./build')
-    const filePath = path.resolve(dir, `Genshin Wish Export-${version}-win.zip`)
+    const filePath = path.resolve(dir, `Arknights Gacha Export-${version}-win.zip`)
     fs.copySync(filePath, path.join(dir, 'app.zip'))
   } catch (e) {}
 }

@@ -1,27 +1,23 @@
 const { readJSON, saveJSON, decipherAes, cipherAes, detectLocale } = require('./utils')
 
 const config = {
-  urls: [],
-  logType: 0,
+  tokens: [],
+  logType: 1,
   lang: detectLocale(),
-  current: 0,
-  proxyPort: 8325,
-  proxyMode: false,
-  autoUpdate: true,
-  fetchFullHistory: false,
-  hideNovice: true
+  current: '',
+  autoUpdate: true
 }
 
 const getLocalConfig = async () => {
   const localConfig = await readJSON('config.json')
   if (!localConfig) return
   const configTemp = {}
-  for (let key in localConfig) {
+  for (const key in localConfig) {
     if (typeof config[key] !== 'undefined') {
       configTemp[key] = localConfig[key]
     }
   }
-  configTemp.urls.forEach(item => {
+  configTemp.tokens.forEach((item) => {
     try {
       item[1] = decipherAes(item[1])
     } catch (e) {
@@ -33,23 +29,23 @@ const getLocalConfig = async () => {
 
 getLocalConfig()
 
-let urlsMap = null
+let tokensMap = null
 const setConfig = (key, value) => {
   Reflect.set(config, key, value)
 }
 
 const saveConfig = async () => {
   let configTemp = config
-  if (urlsMap) {
-    const urls = [...urlsMap]
-    urls.forEach(item => {
+  if (tokensMap) {
+    const tokens = [...tokensMap]
+    tokens.forEach((item) => {
       try {
         item[1] = cipherAes(item[1])
       } catch (e) {
         item[1] = ''
       }
     })
-    configTemp = Object.assign({}, config, { urls })
+    configTemp = Object.assign({}, config, { tokens })
   }
   await saveJSON('config.json', configTemp)
 }
@@ -58,11 +54,11 @@ const getPlainConfig = () => config
 
 const configProxy = new Proxy(config, {
   get: function (obj, prop) {
-    if (prop === 'urls') {
-      if (!urlsMap) {
-        urlsMap = new Map(obj[prop])
+    if (prop === 'tokens') {
+      if (!tokensMap) {
+        tokensMap = new Map(obj[prop])
       }
-      return urlsMap
+      return tokensMap
     } else if (prop === 'set') {
       return setConfig
     } else if (prop === 'save') {

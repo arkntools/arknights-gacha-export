@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const { initWindow } = require('./utils')
-const { disableProxy, proxyStatus } = require('./module/system-proxy')
 require('./getData')
 require('./excel')
 require('./UIGFJson')
@@ -50,9 +49,6 @@ if (!isFirstInstance) {
   })
 
   app.on('will-quit', (e) => {
-    if (proxyStatus.started) {
-      disableProxy()
-    }
     if (getUpdateInfo().status === 'moving') {
       e.preventDefault()
       setTimeout(() => {
@@ -60,11 +56,4 @@ if (!isFirstInstance) {
       }, 3000)
     }
   })
-
-  app.on('quit', () => {
-    if (proxyStatus.started) {
-      disableProxy()
-    }
-  })
 }
-
