@@ -12,6 +12,8 @@
 
 ## 使用说明
 
+> 目前只支持官服
+
 1. 下载工具后解压 - [下载地址](https://github.com/arkntools/arknights-gacha-export/releases/latest/download/Arknights-Gacha-Export.zip)
 2. 点击工具的“加载数据”按钮，会弹出对话框要求输入 token
 3. 前往明日方舟官网 https://ak.hypergryph.com 登录，之后打开网址 https://as.hypergryph.com/user/info/v1/token_by_cookie 获取 token 并填入
