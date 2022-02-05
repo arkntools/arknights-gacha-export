@@ -44,7 +44,7 @@
           "
           class="w-44"
           @change="changeCurrent"
-          v-model="uidSelectText"
+          :model-value="uidSelectText"
         >
           <el-option v-for="[uid, { nickName }] of state.dataMap" :key="uid" :label="nickName" :value="uid"></el-option>
         </el-select>
@@ -66,6 +66,7 @@
     <Setting
       v-show="state.showSetting"
       :i18n="state.i18n"
+      :has-data="!!gachaData"
       @changeLang="getI18nData()"
       @close="showSetting(false)"
     ></Setting>
@@ -100,7 +101,6 @@
 </template>
 
 <script setup>
-const { ipcRenderer } = require('electron')
 import { reactive, computed, onMounted, toRaw } from 'vue'
 import PieChart from './components/PieChart.vue'
 import GachaDetail from './components/GachaDetail.vue'
@@ -108,6 +108,8 @@ import Setting from './components/Setting.vue'
 import Link from './components/Link.vue'
 import gachaDetail from './gachaDetail'
 import { version } from '../../package.json'
+import { componentSafeIpcRenderOn } from './utils'
+const { ipcRenderer } = require('electron')
 
 const state = reactive({
   status: 'init',
@@ -122,65 +124,44 @@ const state = reactive({
   config: {}
 })
 
-const ui = computed(() => {
-  if (state.i18n) {
-    return state.i18n.ui
-  }
-})
+const ui = computed(() => state.i18n?.ui)
 
-const gachaData = computed(() => {
-  return state.dataMap.get(state.current)
-})
+const gachaData = computed(() => state.dataMap.get(state.current))
 
-const uidSelectText = computed(() => {
-  if (state.current === 0) {
-    return state.i18n.ui.select.newAccount
-  } else {
-    return state.current
-  }
-})
+const uidSelectText = computed(() => (state.current === 0 ? state.i18n.ui.select.newAccount : state.current))
 
 const allowClick = () => {
-  const data = state.dataMap.get(state.current)
+  const data = gachaData.value
   if (!data) return true
-  if (Date.now() - data.time < 1000 * 60) {
-    return false
-  }
-  return true
+  return Date.now() - data.time >= 1000 * 60
 }
 
 const hint = computed(() => {
-  const data = state.dataMap.get(state.current)
-  if (!state.i18n) {
-    return 'Loading...'
-  }
+  if (!state.i18n) return 'Loading...'
   const { hint } = state.i18n.ui
   const { colon } = state.i18n.symbol
-  if (state.status === 'init') {
-    return hint.init
-  } else if (state.status === 'loaded') {
-    return `${hint.lastUpdate}${colon}${new Date(data.time).toLocaleString()}`
-  } else if (state.status === 'loading') {
-    return state.log || 'Loading...'
-  } else if (state.status === 'updated') {
-    return state.log
-  } else if (state.status === 'failed') {
-    return state.log + ` - ${hint.failed}`
+  switch (state.status) {
+    case 'init':
+      return hint.init
+    case 'loading':
+      return state.log || 'Loading...'
+    case 'updated':
+      return state.log
+    case 'failed':
+      return state.log + ` - ${hint.failed}`
+    case 'loaded':
+      return `${hint.lastUpdate}${colon}${new Date(gachaData.value?.time).toLocaleString()}`
+    default:
+      return '\u00a0'
   }
-  return '　'
 })
 
 const detail = computed(() => {
-  const data = state.dataMap.get(state.current)
-  if (data) {
-    return gachaDetail(toRaw(data.result))
-  }
+  const data = gachaData.value
+  if (data) return gachaDetail(toRaw(data.result))
 })
 
-const typeMap = computed(() => {
-  const data = state.dataMap.get(state.current)
-  return data.typeMap
-})
+const typeMap = computed(() => gachaData.value?.typeMap)
 
 const fetchData = async (token) => {
   state.status = 'loading'
@@ -199,9 +180,7 @@ const readData = async () => {
   if (data) {
     state.dataMap = data.dataMap
     state.current = data.current
-    if (data.dataMap.get(data.current)) {
-      state.status = 'loaded'
-    }
+    if (gachaData.value) state.status = 'loaded'
   }
 }
 
@@ -218,22 +197,14 @@ const saveExcel = async () => {
 }
 
 const changeCurrent = async (uid) => {
-  if (uid === 0) {
-    state.status = 'init'
-  } else {
-    state.status = 'loaded'
-  }
+  state.status = uid === 0 ? 'init' : 'loaded'
   state.current = uid
   await ipcRenderer.invoke('CHANGE_UID', uid)
 }
 
-const newUser = async () => {
-  await changeCurrent(0)
-}
+const newUser = () => changeCurrent(0)
 
-const relaunch = async () => {
-  await ipcRenderer.invoke('RELAUNCH')
-}
+const relaunch = () => ipcRenderer.invoke('RELAUNCH')
 
 const showSetting = (show) => {
   if (show) {
@@ -241,17 +212,6 @@ const showSetting = (show) => {
   } else {
     state.showSetting = false
     updateConfig()
-  }
-}
-
-const optionCommand = (type) => {
-  if (type === 'setting') {
-    showSetting(true)
-  } else if (type === 'url') {
-    state.urlInput = ''
-    state.showUrlDlg = true
-  } else if (type === 'proxy') {
-    fetchData('proxy')
   }
 }
 
@@ -263,27 +223,37 @@ const updateConfig = async () => {
   state.config = await ipcRenderer.invoke('GET_CONFIG')
 }
 
+componentSafeIpcRenderOn([
+  [
+    'LOAD_DATA_STATUS',
+    (event, message) => {
+      state.log = message
+    }
+  ],
+  [
+    'ERROR',
+    (event, err) => {
+      console.error(err)
+    }
+  ],
+  [
+    'UPDATE_HINT',
+    (event, message) => {
+      state.log = message
+      state.status = 'updated'
+    }
+  ],
+  [
+    'TOKEN_NOT_SET',
+    () => {
+      state.showUrlDlg = true
+    }
+  ]
+])
+
 onMounted(async () => {
   await readData()
   await getI18nData()
-
-  ipcRenderer.on('LOAD_DATA_STATUS', (event, message) => {
-    state.log = message
-  })
-
-  ipcRenderer.on('ERROR', (event, err) => {
-    console.error(err)
-  })
-
-  ipcRenderer.on('UPDATE_HINT', (event, message) => {
-    state.log = message
-    state.status = 'updated'
-  })
-
-  ipcRenderer.on('TOKEN_NOT_SET', () => {
-    state.showUrlDlg = true
-  })
-
   await updateConfig()
 })
 </script>

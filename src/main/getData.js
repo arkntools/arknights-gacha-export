@@ -92,11 +92,11 @@ const getGachaLog = async ({ page, url, retryCount }) => {
   }
 }
 
-const getGachaLogs = async (token) => {
+const getGachaLogs = async (token, localLatestTs) => {
   const text = i18n.log
-  let page = 1
   const list = []
-  let res = {}
+  let page = 1
+  let data
   const url = `${apiDomain}/user/api/inquiry/gacha?token=${encodeURIComponent(token)}`
   do {
     if (page % 10 === 0) {
@@ -104,13 +104,13 @@ const getGachaLogs = async (token) => {
       await sleep(1)
     }
     sendMsg(i18n.parse(text.fetch.current, { page }))
-    res = await getGachaLog({ page, url, retryCount: 5 })
-    if (!res) break
-    list.push(...res.list)
-    if (list.length >= res.pagination.total) break
+    data = await getGachaLog({ page, url, retryCount: 5 })
+    list.push(...data.list)
+    const oldestTs = _.last(data.list)?.ts
+    if (oldestTs < localLatestTs || list.length >= data.pagination.total) break
     page += 1
     await sleep(0.3)
-  } while (res.list.length > 0)
+  } while (data.list.length > 0)
   return list
 }
 
@@ -119,6 +119,9 @@ const checkGachaResStatus = (res) => {
     const message = res.msg
     sendMsg(message)
     throw new Error(message)
+  }
+  if (!res.data) {
+    throw new Error('no data')
   }
   return res
 }
@@ -167,10 +170,11 @@ const fetchData = async (token) => {
   // 获取用户信息
   const { uid, nickName } = await tryGetUserInfo(token)
   // 获取寻访记录
-  const result = await getGachaLogs(token)
+  const localData = dataMap.get(uid)
+  const localLatestTs = localData?.result?.length ? _.last(localData.result).ts : 0
+  const result = await getGachaLogs(token, localLatestTs)
   result.reverse()
   const data = { result, time: Date.now(), uid, nickName }
-  const localData = dataMap.get(uid)
   if (!nickName) data.nickName = localData.nickName
   data.result = mergeData(localData, data)
   dataMap.set(uid, data)
