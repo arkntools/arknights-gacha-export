@@ -1,17 +1,20 @@
 const fs = require('fs-extra')
 const path = require('path')
+const { EOL } = require('os')
 const fetch = require('electron-fetch').default
-const { BrowserWindow, app } = require('electron')
+const { BrowserWindow, app, shell, dialog } = require('electron')
 const crypto = require('crypto')
 const unhandled = require('electron-unhandled')
 const windowStateKeeper = require('electron-window-state')
 const debounce = require('lodash/debounce')
+const moment = require('moment')
 
 const isDev = !app.isPackaged
 
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
 const userDataPath = path.resolve(appRoot, 'userData')
 const userPath = app.getPath('userData')
+const logPath = path.join(userDataPath, 'logs')
 
 let win = null
 const initWindow = () => {
@@ -37,37 +40,35 @@ const initWindow = () => {
 
 const getWin = () => win
 
-const log = []
+const logs = []
+const pushLog = (type, ...lines) => {
+  logs.push([Date.now(), type, lines])
+}
+const saveLog = () => {
+  if (!logs.length) return
+  const text = logs
+    .map(([time, type, lines]) => `[${type}][${new Date(time).toLocaleString()}]${lines.join(' ')}`)
+    .join(EOL)
+  fs.outputFileSync(path.join(logPath, `${moment().format('YYYYMMDD')}.log`), text + EOL, { flag: 'a' })
+  logs.splice(0)
+}
+const openLogsDir = async () => {
+  const err = await shell.openPath(logPath)
+  if (err) dialog.showErrorBox('Error', err)
+}
+
 const sendMsg = (text, type = 'LOAD_DATA_STATUS', needLog = true) => {
-  if (win) {
-    win.webContents.send(type, text)
-  }
+  win?.webContents.send(type, text)
   if (needLog && type !== 'LOAD_DATA_STATUS') {
-    log.push([Date.now(), type, text])
+    pushLog(type, text)
     saveLog()
   }
 }
 
-const saveLog = () => {
-  const text = log
-    .map((item) => {
-      const time = new Date(item[0]).toLocaleString()
-      const type = item[1] === 'LOAD_DATA_STATUS' ? 'INFO' : item[1]
-      const text = item[2]
-      return `[${type}][${time}]${text}`
-    })
-    .join('\r\n')
-  fs.outputFileSync(path.join(userDataPath, 'log.txt'), text)
-}
-
-const authkeyMask = (text = '') => {
-  return text.replace(/authkey=[^&]+&/g, 'authkey=***&')
-}
-
 unhandled({
   showDialog: false,
-  logger: function (err) {
-    log.push([Date.now(), 'ERROR', authkeyMask(err.stack)])
+  logger: (err) => {
+    pushLog('ERROR', err.stack || err.message || err)
     saveLog()
   }
 })
@@ -136,9 +137,7 @@ const detectLocale = () => {
 
 const saveJSON = async (name, data) => {
   try {
-    await fs.outputJSON(path.join(userDataPath, name), data, {
-      spaces: 2
-    })
+    await fs.outputJSON(path.join(userDataPath, name), data)
   } catch (e) {
     sendMsg(e, 'ERROR')
     await sleep(3)
@@ -197,6 +196,7 @@ module.exports = {
   hash,
   cipherAes,
   decipherAes,
+  pushLog,
   saveLog,
   sendMsg,
   readJSON,
@@ -208,5 +208,6 @@ module.exports = {
   detectLocale,
   langMap,
   appRoot,
-  userDataPath
+  userDataPath,
+  openLogsDir
 }

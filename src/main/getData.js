@@ -1,8 +1,19 @@
 const _ = require('lodash-es')
 const fs = require('fs-extra')
 const util = require('util')
-const { ipcMain } = require('electron')
-const { sleep, request, sendMsg, readJSON, saveJSON, userDataPath, langMap } = require('./utils')
+const { ipcMain, dialog } = require('electron')
+const {
+  sleep,
+  request,
+  sendMsg,
+  readJSON,
+  saveJSON,
+  userDataPath,
+  langMap,
+  pushLog,
+  saveLog,
+  openLogsDir
+} = require('./utils')
 const config = require('./config')
 const i18n = require('./i18n')
 
@@ -16,11 +27,11 @@ const saveData = async (data, token) => {
   await saveJSON(`gacha-list-${data.uid}.json`, obj)
 }
 
-let localDataReaded = false
+let localDataRead = false
 const readdir = util.promisify(fs.readdir)
 const readData = async () => {
-  if (localDataReaded) return
-  localDataReaded = true
+  if (localDataRead) return
+  localDataRead = true
   await fs.ensureDir(userDataPath)
   const files = await readdir(userDataPath)
   for (const name of files) {
@@ -149,7 +160,7 @@ const tryGetUserInfo = async (token) => {
   if (uid) return { uid, nickName }
 }
 
-const getUrlFromConfig = () => {
+const getTokenFromConfig = () => {
   if (config.tokens.size) {
     if (config.current && config.tokens.has(config.current)) {
       const url = config.tokens.get(config.current)
@@ -159,14 +170,6 @@ const getUrlFromConfig = () => {
 }
 
 const fetchData = async (token) => {
-  // 读取配置
-  await readData()
-  if (!token) token = getUrlFromConfig()
-  if (!token) {
-    sendMsg(i18n.log.fetch.tokenNotSet)
-    sendMsg(undefined, 'TOKEN_NOT_SET', false)
-    return false
-  }
   // 获取用户信息
   const { uid, nickName } = await tryGetUserInfo(token)
   // 获取寻访记录
@@ -178,14 +181,57 @@ const fetchData = async (token) => {
   if (!nickName) data.nickName = localData.nickName
   data.result = mergeData(localData, data)
   dataMap.set(uid, data)
-  await changeCurrent(uid)
   await saveData(data, token)
+  return data
+}
+
+const fetchCurrentData = async (token) => {
+  await readData()
+  if (!token) token = getTokenFromConfig()
+  if (!token) {
+    sendMsg(i18n.log.fetch.tokenNotSet)
+    sendMsg(undefined, 'TOKEN_NOT_SET', false)
+    return false
+  }
+  const { uid } = await fetchData(token)
+  await changeCurrent(uid)
   return true
 }
 
-ipcMain.handle('FETCH_DATA', async (event, param) => {
+const fetchAllData = async () => {
+  let error = false
   try {
-    const success = await fetchData(param)
+    pushLog('INFO', 'Read config and data')
+    await readData()
+  } catch (e) {
+    error = true
+    console.error(e)
+    pushLog('ERROR', e.stack || e.message || e)
+  }
+  for (const [uid, token] of config.tokens) {
+    if (!token) continue
+    try {
+      pushLog('INFO', 'Fetch gacha data of uid', uid)
+      await fetchData(token)
+    } catch (e) {
+      error = true
+      console.error(e)
+      pushLog('ERROR', e.stack || e.message || e)
+    }
+  }
+  saveLog()
+  if (error) {
+    const { response } = await dialog.showMessageBox({
+      title: 'Error',
+      message: '发生错误，点击 OK 以打开日志目录'
+    })
+    if (response === 0) await openLogsDir()
+  }
+}
+
+ipcMain.handle('FETCH_DATA', async (event, ...args) => {
+  try {
+    const success = await fetchCurrentData(...args)
     if (!success) return false
     return {
       dataMap,
@@ -227,9 +273,10 @@ ipcMain.handle('I18N_DATA', () => {
   return i18n.data
 })
 
-exports.getData = () => {
-  return {
+module.exports = {
+  getData: () => ({
     dataMap,
     current: config.current
-  }
+  }),
+  fetchAllData
 }

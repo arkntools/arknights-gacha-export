@@ -3,9 +3,11 @@ const { initWindow } = require('./utils')
 require('./getData')
 require('./excel')
 require('./UIGFJson')
-const { getUpdateInfo } = require('./update/index')
+const { getUpdateInfo } = require('./update')
+const { fetchAllData } = require('./getData')
 
 const isDev = !app.isPackaged
+const isSilent = app.commandLine.hasSwitch('silent')
 let win = null
 
 function createWindow() {
@@ -29,7 +31,14 @@ if (!isFirstInstance) {
     }
   })
 
-  app.whenReady().then(createWindow)
+  app.whenReady().then(async () => {
+    if (isSilent) {
+      await fetchAllData()
+      app.exit(0)
+      return
+    }
+    createWindow()
+  })
 
   ipcMain.handle('RELAUNCH', async () => {
     app.relaunch()

@@ -1,7 +1,7 @@
 const _ = require('lodash-es')
 const moment = require('moment')
 const ExcelJS = require('./module/exceljs.min.js')
-const getData = require('./getData').getData
+const { getData } = require('./getData')
 const { app, ipcMain, dialog } = require('electron')
 const fs = require('fs-extra')
 const path = require('path')

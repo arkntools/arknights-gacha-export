@@ -4,7 +4,7 @@
 
 # Arkntools - Arknights Gacha Export
 
-明日方舟寻访记录导出工具
+明日方舟干员寻访记录导出工具
 
 原作：[biuuu/genshin-wish-export](https://github.com/biuuu/genshin-wish-export)
 
@@ -34,7 +34,21 @@
 - [x] 按需拉取寻访数据
 - [ ] 自动定时更新寻访数据
 
-## Devlopment
+## 定时更新寻访数据
+
+加上 `--silent` 参数启动可以在后台静默更新所有帐号的寻访数据，完成后会自动退出
+
+Windows 可以利用**任务计划**来定时运行
+
+推荐频率每周一次
+
+## TODO
+
+- [x] 按需拉取寻访数据
+- [x] 定时更新寻访数据
+- [ ] MacOS 支持
+
+## Development
 
 ```bash
 # 安装模块

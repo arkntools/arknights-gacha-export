@@ -2,7 +2,7 @@ const { app, ipcMain, dialog } = require('electron')
 const fs = require('fs-extra')
 const path = require('path')
 const moment = require('moment')
-const getData = require('./getData').getData
+const { getData } = require('./getData')
 
 const start = async () => {
   const { dataMap, current } = await getData()
