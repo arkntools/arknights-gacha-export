@@ -10,11 +10,18 @@ const debounce = require('lodash/debounce')
 const moment = require('moment')
 
 const isDev = !app.isPackaged
+const appId = 'app.lolicon.arknights-gacha-export'
 
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve(appRoot, 'userData')
-const userPath = app.getPath('userData')
-const logPath = path.join(userDataPath, 'logs')
+const userDataPath = path.resolve(app.getPath('appData'), appId)
+const logsPath = path.join(userDataPath, 'logs')
+const tempPath = path.resolve(app.getPath('temp'), appId)
+
+// 数据目录迁移
+const oldUserDataPath = path.resolve(appRoot, 'userData')
+if (fs.existsSync(oldUserDataPath)) {
+  fs.moveSync(oldUserDataPath, userDataPath, { overwrite: true })
+}
 
 let win = null
 const initWindow = () => {
@@ -41,19 +48,19 @@ const initWindow = () => {
 const getWin = () => win
 
 const logs = []
-const pushLog = (type, ...lines) => {
-  logs.push([Date.now(), type, lines])
+const pushLog = (type, ...msgs) => {
+  logs.push([Date.now(), type, msgs])
 }
 const saveLog = () => {
   if (!logs.length) return
   const text = logs
-    .map(([time, type, lines]) => `[${type}][${new Date(time).toLocaleString()}]${lines.join(' ')}`)
+    .map(([time, type, msgs]) => `[${type}][${new Date(time).toLocaleString()}]${msgs.join(' ')}`)
     .join(EOL)
-  fs.outputFileSync(path.join(logPath, `${moment().format('YYYYMMDD')}.log`), text + EOL, { flag: 'a' })
+  fs.outputFileSync(path.join(logsPath, `${moment().format('YYYYMMDD')}.log`), text + EOL, { flag: 'a' })
   logs.splice(0)
 }
 const openLogsDir = async () => {
-  const err = await shell.openPath(logPath)
+  const err = await shell.openPath(logsPath)
   if (err) dialog.showErrorBox('Error', err)
 }
 
@@ -158,7 +165,7 @@ const hash = (data, type = 'sha256') => {
   return hmac.digest('hex')
 }
 
-const scryptKey = crypto.scryptSync(userPath, 'hk4e', 24)
+const scryptKey = crypto.scryptSync(app.getPath('userData'), 'hk4e', 24)
 const cipherAes = (data) => {
   const algorithm = 'aes-192-cbc'
   const iv = Buffer.alloc(16, 0)
@@ -204,10 +211,10 @@ module.exports = {
   initWindow,
   getWin,
   localIp,
-  userPath,
   detectLocale,
   langMap,
   appRoot,
   userDataPath,
+  tempPath,
   openLogsDir
 }

@@ -18,36 +18,26 @@ const createZip = (filePath, dest) => {
 }
 
 const start = async () => {
-  copyAppZip()
   const appPath = './build/win-unpacked/resources/app'
-  const name = 'app.zip'
   const outputPath = path.resolve('./build/update/update/')
-  const zipPath = path.resolve(outputPath, name)
+  const zipPath = path.resolve(outputPath, 'app.zip')
   await fs.ensureDir(outputPath)
   await fs.emptyDir(outputPath)
   await fs.outputFile('./build/update/CNAME', 'arknights-gacha-export.lolicon.app')
   createZip(appPath, zipPath)
   const buffer = await fs.readFile(zipPath)
   const sha256 = hash(buffer)
-  const hashName = sha256.slice(7, 12)
-  await fs.copy(zipPath, path.resolve(outputPath, `${hashName}.zip`))
+  const hashedZipName = `${sha256.slice(0, 8)}.zip`
+  await fs.copy(zipPath, path.resolve(outputPath, hashedZipName))
   await fs.remove(zipPath)
   await fs.outputJSON(path.join(outputPath, 'manifest.json'), {
     active: true,
     version,
     from: '0.0.1',
-    name: `${hashName}.zip`,
+    name: hashedZipName,
     hash: sha256
   })
   copyHTML()
-}
-
-const copyAppZip = () => {
-  try {
-    const dir = path.resolve('./build')
-    const filePath = path.resolve(dir, `Arknights Gacha Export-${version}-win.zip`)
-    fs.copySync(filePath, path.join(dir, 'app.zip'))
-  } catch (e) {}
 }
 
 const copyHTML = () => {
