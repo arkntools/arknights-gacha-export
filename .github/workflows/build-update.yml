@@ -4,24 +4,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  main:
+  build-update:
+    name: Build update
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: "16.x"
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
       - name: Build Update
         run: |
-          yarn --frozen-lockfile
           yarn build:dir
           yarn build-update
       - name: Deploy
         uses: crazy-max/ghaction-github-pages@v2
         with:
           commit_message: Update app
-          build_dir: ./build/update
+          build_dir: build/update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

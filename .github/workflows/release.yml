@@ -1,50 +1,44 @@
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "v*"
 
-name: Upload Release Asset
+name: Release
 
 jobs:
-  build:
-    name: Upload Release Asset
-    runs-on: windows-latest
+  release:
+    name: Release
+    runs-on: ${{ matrix.cfg.os }}
+    strategy:
+      matrix:
+        cfg:
+          - { os: windows-latest, build: win64, build-update: true }
+          - { os: macos-latest, build: mac }
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v2
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: "16.x"
-      - name: Build App
-        run: |
-          yarn --frozen-lockfile
-          yarn build:win64
-          yarn build-update
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+      - name: Build
+        run: yarn build:${{ matrix.cfg.build }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          files: build/Arknights Gacha Export-*.zip
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./build/app.zip
-          asset_name: Arknights-Gacha-Export.zip
-          asset_content_type: application/zip
+      - name: Build update
+        if: matrix.cfg.build-update
+        run: yarn build-update
       - name: Deploy update
+        if: matrix.cfg.build-update
         uses: crazy-max/ghaction-github-pages@v2
         with:
           commit_message: Update app
-          build_dir: ./build/update
+          build_dir: build/update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
