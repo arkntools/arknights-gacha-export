@@ -1,6 +1,6 @@
 {
   "name": "arknights-gacha-export",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "./dist/electron/main/main.js",
   "author": "神代绮凛 <https://github.com/Tsuk1ko>",
   "license": "MIT",
@@ -34,7 +34,8 @@
         "url": "http://127.0.0.1"
       }
     ],
-    "productName": "Arknights Gacha Export",
+    "productName": "Arknights-Gacha-Export",
+    "artifactName": "${productName}-${os}-${arch}.${ext}",
     "appId": "app.lolicon.arknights-gacha-export",
     "directories": {
       "output": "build"
@@ -75,7 +76,7 @@
     "electron": "^17.0.1",
     "electron-builder": "^22.14.13",
     "electron-fetch": "^1.7.4",
-    "electron-unhandled": "^3.0.2",
+    "electron-unhandled": "^4.0.0",
     "electron-window-state": "^5.0.3",
     "element-plus": "^2.0.2",
     "eslint": "^8.9.0",
@@ -96,7 +97,7 @@
     "rollup-plugin-esbuild": "^4.8.2",
     "semver": "^7.3.5",
     "tailwindcss": "^3.0.22",
-    "vite": "2.8.2",
+    "vite": "^2.8.3",
     "vue": "^3.2.31",
     "yauzl": "^2.10.0"
   }
