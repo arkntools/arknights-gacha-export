@@ -28,7 +28,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/Arknights Gacha Export-*.zip
+          files: build/Arknights-Gacha-Export-*.zip
           draft: false
           prerelease: false
       - name: Build update
