@@ -35,7 +35,8 @@
 
 加上 `--silent` 参数启动可以在后台静默更新所有帐号的寻访数据，完成后会自动退出
 
-Windows 可以利用**计划任务**来定时运行
+- Windows 可以利用**计划任务**来定时运行，例：`Arknights-Gacha-Export.exe --silent`
+- Mac 可以利用 **crontab** 来定时运行，例：`open Arknights-Gacha-Export.app --args --silent`
 
 推荐频率每周一次
 
