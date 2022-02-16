@@ -165,7 +165,7 @@ const hash = (data, type = 'sha256') => {
   return hmac.digest('hex')
 }
 
-const scryptKey = crypto.scryptSync(app.getPath('userData'), 'hk4e', 24)
+const scryptKey = crypto.scryptSync(app.getPath('appData'), 'hk4e', 24)
 const cipherAes = (data) => {
   const algorithm = 'aes-192-cbc'
   const iv = Buffer.alloc(16, 0)
