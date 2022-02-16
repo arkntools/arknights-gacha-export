@@ -21,18 +21,21 @@ function createWindow() {
 
 const isFirstInstance = app.requestSingleInstanceLock()
 
-if (!isFirstInstance) {
+if (!isFirstInstance && !isSilent) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
-    if (win) {
-      if (win.isMinimized()) win.restore()
-      win.focus()
-    }
-  })
+  if (!isSilent) {
+    app.on('second-instance', () => {
+      if (win) {
+        if (win.isMinimized()) win.restore()
+        win.focus()
+      }
+    })
+  }
 
   app.whenReady().then(async () => {
     if (isSilent) {
+      console.log('Silent Mode')
       await fetchAllData()
       app.exit(0)
       return
