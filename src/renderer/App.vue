@@ -77,13 +77,16 @@
       width="90%"
       custom-class="token-dialog max-w-md"
     >
-      <p class="mb-4 text-gray-500">
+      <div class="mb-4 text-gray-500">
         {{ ui.tokenDialog.hint1 }}
-        <Link href="https://ak.hypergryph.com" />
+        <Link :title="ui.tokenDialog.link1" href="https://ak.hypergryph.com" />
         {{ ui.tokenDialog.hint2 }}
-        <Link href="https://web-api.hypergryph.com/account/info/hg" />
+        <div class="my-2 flex-space-evenly">
+          <Link :title="ui.tokenDialog.link2" href="https://web-api.hypergryph.com/account/info/hg" />
+          <Link :title="ui.tokenDialog.link3" href="https://web-api.hypergryph.com/account/info/ak-b" />
+        </div>
         {{ ui.tokenDialog.hint3 }}
-      </p>
+      </div>
       <el-input :placeholder="ui.tokenDialog.placeholder" v-model="state.urlInput" spellcheck="false"></el-input>
       <template #footer>
         <span class="dialog-footer">
@@ -270,5 +273,9 @@ onMounted(async () => {
 }
 .token-dialog .el-dialog__body {
   padding-top: 16px;
+}
+.flex-space-evenly {
+  display: flex;
+  justify-content: space-evenly;
 }
 </style>

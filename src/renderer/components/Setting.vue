@@ -20,7 +20,7 @@
       </el-form-item>
       <el-form-item :label="text.logType">
         <el-radio-group @change="saveSetting" v-model.number="settingForm.logType">
-          <el-radio-button :label="1">{{ text.cnOfficialServer }}</el-radio-button>
+          <el-radio-button :label="1">{{ text.cnServer }}</el-radio-button>
         </el-radio-group>
         <p class="text-gray-400 text-xs my-1.5">{{ text.logTypeHint }}</p>
       </el-form-item>
@@ -43,9 +43,9 @@
 </template>
 
 <script setup>
-const { ipcRenderer, shell } = require('electron')
 import { reactive, onMounted, computed } from 'vue'
 import Link from './Link.vue'
+const { ipcRenderer } = require('electron')
 
 const emit = defineEmits(['close', 'changeLang'])
 

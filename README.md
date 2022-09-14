@@ -12,12 +12,15 @@
 
 ## 使用说明
 
-> 目前只支持官服
+> 目前只支持官服/B服
 
 1. 下载工具后解压 - [下载地址](https://github.com/arkntools/arknights-gacha-export/releases/latest)
 2. 点击工具的“加载数据”按钮，会弹出对话框要求输入 token
-3. 前往明日方舟官网 https://ak.hypergryph.com 登录，之后打开网址 https://web-api.hypergryph.com/account/info/hg 获取 token 并填入
-4. 如果没出什么问题的话，你会看到正在读取数据的提示，最终效果如下图所示
+   1. 前往明日方舟官网 https://ak.hypergryph.com 登录
+   2. 打开网址复制 token 并填入
+      - 官服：https://web-api.hypergryph.com/account/info/hg
+      - B服：https://web-api.hypergryph.com/account/info/ak-b
+3. 如果没出什么问题的话，你会看到正在读取数据的提示，最终效果如下图所示
    <details>
     <summary>展开图片</summary>
 

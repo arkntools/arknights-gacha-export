@@ -18,7 +18,8 @@ const config = require('./config')
 const i18n = require('./i18n')
 
 const dataMap = new Map()
-const apiDomain = 'https://ak.hypergryph.com'
+
+const isBilibiliServerToken = (token) => token.length > 64
 
 const saveData = async (data, token) => {
   const obj = Object.assign({}, data)
@@ -108,7 +109,12 @@ const getGachaLogs = async (token, localLatestTs) => {
   const list = []
   let page = 1
   let data
-  const url = `${apiDomain}/user/api/inquiry/gacha?token=${encodeURIComponent(token)}`
+  const url = (() => {
+    const urlObj = new URL('https://ak.hypergryph.com/user/api/inquiry/gacha')
+    urlObj.searchParams.set('token', token)
+    if (isBilibiliServerToken(token)) urlObj.searchParams.set('channelId', '2')
+    return urlObj.href
+  })()
   do {
     if (page % 10 === 0) {
       sendMsg(i18n.parse(text.fetch.interval, { page }))
@@ -153,7 +159,9 @@ const tryGetUserInfo = async (token) => {
   const res = await request(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ appId: 1, channelMasterId: 1, channelToken: { token } })
+    body: JSON.stringify(
+      isBilibiliServerToken(token) ? { token } : { appId: 1, channelMasterId: 1, channelToken: { token } }
+    )
   })
   checkUserInfoResStatus(res)
   const { uid, nickName = '' } = res.data || {}
