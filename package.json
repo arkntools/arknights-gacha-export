@@ -1,6 +1,6 @@
 {
   "name": "arknights-gacha-export",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "./dist/electron/main/main.js",
   "author": "神代绮凛 <https://github.com/Tsuk1ko>",
   "license": "MIT",

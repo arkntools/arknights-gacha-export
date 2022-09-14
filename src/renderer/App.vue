@@ -81,7 +81,7 @@
         {{ ui.tokenDialog.hint1 }}
         <Link href="https://ak.hypergryph.com" />
         {{ ui.tokenDialog.hint2 }}
-        <Link href="https://as.hypergryph.com/user/info/v1/token_by_cookie" />
+        <Link href="https://web-api.hypergryph.com/account/info/hg" />
         {{ ui.tokenDialog.hint3 }}
       </p>
       <el-input :placeholder="ui.tokenDialog.placeholder" v-model="state.urlInput" spellcheck="false"></el-input>
