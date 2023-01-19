@@ -41,7 +41,7 @@
 - Windows 可以利用**计划任务**来定时运行，例：`Arknights-Gacha-Export.exe --silent`
 - Mac 可以利用 **crontab** 来定时运行，例：`open Arknights-Gacha-Export.app --args --silent`
 
-推荐频率每周一次
+不过需要注意 token 具有有效期，官服非常短，B服非常长，所以B服更适合用这个功能
 
 ## 用户数据
 
@@ -49,12 +49,6 @@
 
 - Windows 位于 `%APPDATA%\app.lolicon.arknights-gacha-export`
 - MacOS 位于 `~/Library/Application Support/app.lolicon.arknights-gacha-export`
-
-## TODO
-
-- [x] 按需拉取寻访数据
-- [x] 定时更新寻访数据
-- [x] MacOS 支持
 
 ## Development
 
